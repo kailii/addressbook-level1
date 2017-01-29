@@ -207,17 +207,35 @@ public class AddressBook {
      */
 
     public static void main(String[] args) {
-        showWelcomeMessage();
-        processProgramArgs(args);
-        loadDataFromStorage();
+    	 showToUser(DIVIDER, DIVIDER, VERSION, MESSAGE_WELCOME, DIVIDER);
+    	 if (args.length >= 2) {
+             showToUser(MESSAGE_INVALID_PROGRAM_ARGS);
+             exitProgram();
+         }
+
+         if (args.length == 1) {
+             setupGivenFileForStorage(args[0]);
+         }
+
+         if(args.length == 0) {
+             setupDefaultFileForStorage();
+         }
+         
+         initialiseAddressBookModel(loadPersonsFromFile(storageFilePath));
         while (true) {
-            String userCommand = getUserInput();
-            echoUserCommand(userCommand);
-            String feedback = executeCommand(userCommand);
-            showResultToUser(feedback);
+        	System.out.print(LINE_PREFIX + "Enter command: ");
+            String inputLine = SCANNER.nextLine();
+            // silently consume all blank and comment lines
+            while (inputLine.trim().isEmpty() || inputLine.trim().charAt(0) == INPUT_COMMENT_MARKER) {
+                inputLine = SCANNER.nextLine();
+            }
+        String userCommand = inputLine;
+        showToUser("[Command entered:" + userCommand + "]");
+		String feedback = executeCommand(userCommand);
+		String result = null;
+		showToUser(result, DIVIDER);
         }
     }
-
     /*
      * NOTE : =============================================================
      * The method header comment can be omitted if the method is trivial
@@ -508,7 +526,7 @@ public class AddressBook {
             return MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
         }
         final String[] targetInModel = getPersonByLastVisibleIndex(targetVisibleIndex);
-        return deletePersonFromAddressBook(targetInModel) ? getMessageForSuccessfulDelete(targetInModel) // success
+        return hasDeletedPersonFromAddressBook(targetInModel) ? getMessageForSuccessfulDelete(targetInModel) // success
                                                           : MESSAGE_PERSON_NOT_IN_ADDRESSBOOK; // not found
     }
 
@@ -793,12 +811,12 @@ public class AddressBook {
      * @param exactPerson the actual person inside the address book (exactPerson == the person to delete in the full list)
      * @return true if the given person was found and deleted in the model
      */
-    private static boolean deletePersonFromAddressBook(String[] exactPerson) {
-        final boolean changed = ALL_PERSONS.remove(exactPerson);
-        if (changed) {
+    private static boolean hasDeletedPersonFromAddressBook(String[] exactPerson) {
+        final boolean hasChanged = ALL_PERSONS.remove(exactPerson);
+        if (hasChanged) {
             savePersonsToFile(getAllPersonsInAddressBook(), storageFilePath);
         }
-        return changed;
+        return hasChanged;
     }
 
     /**
@@ -1146,12 +1164,12 @@ public class AddressBook {
     /**
      * Removes sign(p/, d/, etc) from parameter string
      *
-     * @param s  Parameter as a string
-     * @param sign  Parameter sign to be removed
+     * @param fullString  Parameter as a string
+     * @param prefix  Parameter sign to be removed
      * @return  string without the sign
      */
     private static String removePrefixSign(String s, String sign) {
-        return s.replace(sign, "");
+        return s.replaceFirst(sign, "");
     }
 
     /**
